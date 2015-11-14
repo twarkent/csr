@@ -132,7 +132,10 @@ class CsrMap(object):
             raise RuntimeError('Error: Yaml file must include sections for the following: design, cpu, blocks.')
         self.load_sub_blocks(blocks, yaml_file)
 
-    def yaml_load(self, file, parent_file=""):
+    def yaml_load(self, file, parent_file=''):
+        if parent_file != '':
+            pfile = os.path.split(os.path.abspath(parent_file))
+            file = pfile[0] + '/' + file
         try:
             fh = open(file, 'r')
         except:
@@ -149,7 +152,7 @@ class CsrMap(object):
             print "Load File: %s" % (block['file'])
             log.info( "%s : %s" %(block['name'], block['file']))
 
-            csr_map = self.yaml_load(block['file'], parent_file)
+            csr_map = self.yaml_load(block['file'], parent_file=parent_file)
 
             self.files.append(block['file'])
             blocks[index]['csr'] = csr_map
@@ -249,7 +252,8 @@ def csr_txt(reg, base_addr, awidth, dwidth):
     chars = []
     chars.append(unichr(0x2502))
     for i in range(dwidth-1,-1,-1):
-        chars.append("%02d" % i)
+        b = str('%02d' % i)
+        chars.append(unicode(b, 'utf-8'))
         chars.append(unichr(0x2502))
     lines.append(chars)
 
@@ -262,16 +266,16 @@ def csr_txt(reg, base_addr, awidth, dwidth):
 
     # Line #4
     bit_pos = []
-    chars = []
-    chars.append(' ')
-    chars.append(' ')
-    chars.append(' ')
-    vertical = unichr(0x2502)
+#   chars = []
+#   chars.append(' ')
+#   chars.append(' ')
+#   chars.append(' ')
+#   vertical = unichr(0x2502)
     for b in range(dwidth):
-        bit_pos.append('   ')
-    chars[0] = vertical
-    bit_pos[31] = "|  "
-    bit_pos[0]  = "  |"
+        bit_pos.append(u'   ')
+#   chars[0] = vertical
+    bit_pos[31] = u"|  "
+    bit_pos[0]  = u"  |"
     bit_pos_max = 0
     bit_pos_min = 0
     for field in reg['fields']:
@@ -282,14 +286,14 @@ def csr_txt(reg, base_addr, awidth, dwidth):
         else:
             bit_pos_max = int(field_bit_pos[0])
             bit_pos_min = bit_pos_max
-        print "MAX:", bit_pos_max, "MIN:", bit_pos_min
+#       print "MAX:", bit_pos_max, "MIN:", bit_pos_min
         for b in range(bit_pos_max, bit_pos_min-1, -1):
-            bit_pos[b] = '---'
-            if b == bit_pos_max:          bit_pos[b] = '|--'
-            if b == 0:                    bit_pos[b] = '---|'
-            if b == 31:                   bit_pos[b] = '|--'
-            if b == 0 and b==bit_pos_max: bit_pos[b] = '|--|'
-            if bit_pos_min==bit_pos_max:  bit_pos[b] = '|--'
+            bit_pos[b] = u'---'
+            if b == bit_pos_max:            bit_pos[b] = u'|--'
+            if b == 0:                      bit_pos[b] = u'---|'
+            if b == 31:                     bit_pos[b] = u'|--'
+            if b == 0 and b==bit_pos_max:   bit_pos[b] = u'|--|'
+            elif bit_pos_min==bit_pos_max:  bit_pos[b] = u'|--'
 
     chars =  ''.join(bit_pos[::-1])
     lines.append(chars)
@@ -305,25 +309,25 @@ def csr_txt(reg, base_addr, awidth, dwidth):
     lines.append(chars)
 
     chars = []
-    chars.append(' Bit-Pos Field            Default     Attributes  Description')
+    chars.append(u' Bit-Pos Field            Default     Attributes  Description')
     lines.append(chars)
 
     chars = []
-    chars.append(' ')
-    chars.append(unichr(0x2500)*7)
-    chars.append(' ')
+    chars.append(unichr(0x0020))         # space
+    chars.append(unichr(0x2500)*7)       # line
+    chars.append(unichr(0x0020))
     chars.append(unichr(0x2500)*16)
-    chars.append(' ')
+    chars.append(unichr(0x0020))
     chars.append(unichr(0x2500)*11)
-    chars.append(' ')
+    chars.append(unichr(0x0020))
     chars.append(unichr(0x2500)*11)
-    chars.append(' ')
+    chars.append(unichr(0x0020))
     chars.append(unichr(0x2500)*46)
     lines.append(chars)
 
     for c in lines:
-        print " "*margin,
-        print "".join(c)
+        print ' '*margin,
+#       print unicode.join(u'', c)
 
     for field in reg['fields']:
         bit_pos = '[%s]' % field['bit_pos']
@@ -331,6 +335,7 @@ def csr_txt(reg, base_addr, awidth, dwidth):
         por = "{0:#0{1}x}".format(por, data_disp)
         attributes = ' '.join(field['attributes'])
         print "   %7s %-15s  %s  %-12s%s "% (bit_pos, field['name'], por, attributes, field['desc'])
+    print ""
     print ""
   
 
@@ -350,7 +355,7 @@ def print_txt(csr):
     for block in blocks:
 #       print block.viewkeys()
         base_addr = block['base_addr']
-        print "  Block: %s %s (%s): %s" % ( block['csr']['name'], str(hex(block['base_addr'])), block['file'], block['csr']['desc'])
+        print "  BLOCK: %s %s (%s): %s" % ( block['csr']['name'], str(hex(block['base_addr'])), block['file'], block['csr']['desc'])
         awidth = block['csr']['awidth']
         dwidth = block['csr']['dwidth']
 #       disp = awidth/4 + 2
