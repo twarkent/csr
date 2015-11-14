@@ -1,0 +1,65 @@
+# =================================================================== 
+# BLOCK: Block C
+# ===================================================================
+  name: blk_c
+  awidth: 16
+  dwidth: 32
+  rd_error: 32'hDEAD_CCCC
+  desc: Block C Control
+
+  blocks:
+    - name: sub0
+      base_addr: 0x1000
+      file: sub_csr.yaml
+    - name: sub1
+      base_addr: 0x2000
+      file: sub_csr.yaml
+
+  registers:
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: mode
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - name: mode
+      address: 0x0001
+      desc: Mode
+
+      fields: # ~~~~~~~~~~~~~~~~~~~
+        - name: enable
+          bit_pos: '0'
+          attributes: [RW]
+          por: 0
+          desc: Block Enable
+
+        - name: mode
+          bit_pos: '3:1'
+          attributes: [RW]
+          por: 0
+          desc: Operation mode
+
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: delay
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - name:    min_delay
+      address: 0x0002
+      desc:    Minimum Packet Delay
+
+      fields: # ~~~~~~~~~~~~~~~~~~~
+        - name: min_delay
+          bit_pos: '31:0'
+          attributes: [RW]
+          por: 0
+          desc: Minimum delay (us)
+
+    - name: max_delay
+      address: 0x0003
+      desc: Maximum Packet Delay
+
+      fields: # ~~~~~~~~~~~~~~~~~~~
+        - name: max_delay
+          bit_pos: '31:0'
+          attributes: [RW]
+          por: 0
+          desc: Maximum delay (us)
+
+

@@ -1,0 +1,55 @@
+# --------------------------------------------------------------------------------------------------
+#    field attributes - must be separated by ',' and inside square brackets [ ] 
+#    example: [RW, RP, WP]
+#      * RW          Read/Write
+#      * RO          Read-only
+#      * WO          Write-only
+#      * W1C         Write '1' to clear
+#      * WP[A]       Create a pulse when written. _A pulse stays asserted until acknowledged
+#      - RP[A]       Create a pulse when read. _A pulse stays asserted until acknowledged
+#      - SUB         Indicates register is wider than DWIDTH
+#      - INTERNAL    Indicates signal is internal to CSR block
+
+#      Consider these:
+#      - COR         Clear on read
+#      - SOR         Set on read
+#      - STICKY-0    Sticky 0 - Registered input. Stays 0 until W1C
+#      - STICKY-1    Sticky 1 - Registered input. Stays 1 until W1C
+# --------------------------------------------------------------------------------------------------
+
+design:
+  name: design_name
+  desc: Control Status Register Definition
+
+  # CPU: ================================================================ 
+  cpu:
+    name:   Freescale
+    bus:    PCIe
+    awidth: 20
+    dwidth: 32
+    access: sync       # Interface synchronized to destination clock
+    decode: 4          # Use upper 4 bits for block decoding
+
+    signals:
+      clock:       clk
+      reset:       rst
+      cs:          cs
+      write:       wr
+      read:        rd
+      address:     addr
+      write_data:  wdata
+      read_data:   rdata
+      byte_enable: be
+
+  blocks:
+    - name: blk_a
+      file: blk_a/blk_a_csr.yaml
+      base_addr: 0x10000
+    - name: blk_b
+      file: blk_b/blk_b_csr.yaml
+      base_addr: 0x20000
+    - name: blk_c
+      file: blk_c/blk_c_csr.yaml
+      base_addr: 0x30000
+
+

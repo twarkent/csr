@@ -1,0 +1,164 @@
+# --------------------------------------------------------------------------------------------------
+#    field attributes - must be separated by ',' and inside square brackets [ ] 
+#    example: [RW, RP, WP]
+#      * RW          Read/Write
+#      * RO          Read-only
+#      * WO          Write-only
+#      * W1C         Write '1' to clear
+#      * WP[A]       Create a pulse when written. _A pulse stays asserted until acknowledged
+#      - RP[A]       Create a pulse when read. _A pulse stays asserted until acknowledged
+#      - SUB         Indicates register is wider than DWIDTH
+#      - INTERNAL    Indicates signal is internal to CSR block
+
+#      Consider these:
+#      - COR         Clear on read
+#      - SOR         Set on read
+#      - STICKY-0    Sticky 0 - Registered input. Stays 0 until W1C
+#      - STICKY-1    Sticky 1 - Registered input. Stays 1 until W1C
+# --------------------------------------------------------------------------------------------------
+
+  name: blk_a
+  awidth: 16
+  dwidth: 32
+  rd_error: 32'hDEAD_AAAA
+  desc: block A control
+
+  registers:
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: sys_timer_ctrl
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - name: sys_timer_ctrl
+      address: 0x0020
+      desc: System Timer Control
+
+      fields: # ~~~~~~~~~~~~~~~~~~~
+        - name: enable
+          bit_pos: '0'
+          attributes: [RW, RPA]
+          por: 0
+          desc: System timer enable
+
+        - name: free_run
+          bit_pos: '4'
+          attributes: [RW]
+          por: 0
+          desc:  0 - System Timer is synchronized to the transmit modem frame_sync.
+                 1 - System Timer is free-running
+
+        - name: test
+          bit_pos: '9:8'
+          attributes: [WPA]
+          por: 0
+          desc:  0 - System Timer is synchronized to the transmit modem frame_sync.
+                 1 - System Timer is free-running
+
+        - name: master_pll_locked
+          bit_pos: '10'
+          attributes: [RO]
+          por: 0
+          desc:  0 - PLL Locked
+                 1 - PLL Loss of Lock
+    
+        - name: triggers
+          bit_pos: '13:12'
+          attributes: [W1C, RP]
+          por: 0
+          desc: Create pulse when reading this register 
+
+        - name: fifo_rd
+          bit_pos: '14'
+          attributes: [RP]
+          por: 0
+          desc: Create pulse when reading this register 
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: sys_timer
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - name: sys_timer
+      address: 0x0021
+      desc: System Timer
+
+      fields:
+        - name: sub_chip_ctr
+          bit_pos: '3:0'
+          attributes: [RO]
+          por: 0
+          desc: sub-chip counter
+
+        - name: chip_ctr
+          bit_pos: '15:4'
+          attributes: [RO]
+          por: 0
+          desc: chip counter
+
+        - name: slot_ctr
+          bit_pos: '19:16'
+          attributes: [RO]
+          por: 0
+          desc: slot counter
+
+        - name: frame_ctr
+          bit_pos: '31:20'
+          attributes: [RO]
+          por: 0
+          desc: frame counter
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: sys_timer_status
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - name: sys_timer_status
+      address: 0x0022
+      desc: system timer status
+
+      fields:
+        - name: error_sub_chip
+          bit_pos: '3:0'
+          attributes: [RO]
+          por: 0
+          desc: sub-chip error
+
+        - name: error_ctr
+          bit_pos: '7:4'
+          attributes: [RO]
+          por: 0
+          desc: error counter
+
+        - name: sync_detect
+          bit_pos: '10'
+          attributes: [RO]
+          por: 0
+          desc:  0 - undetected frame_sync
+                 1 - detected frame_sync
+    
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: sys_timer_tc -->
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - name: sys_timer_tc
+      address: 0x0023
+      desc: System Timer Terminal Count
+
+      fields: # ~~~~~~~~~~~~~~~~~~~
+        - name: sub_chip_tc
+          bit_pos: '3:0'
+          attributes: [RW, RP]
+          por: 0
+          desc: sub-chip terminal count
+
+        - name: chip_tc
+          bit_pos: '15:4'
+          attributes: [RW]
+          por: 0
+          desc: chip terminal count
+
+        - name: slot_tc
+          bit_pos: '19:16'
+          attributes: [RW]
+          por: 0
+          desc: slot terminal count
+
+        - name: frame_tc
+          bit_pos: '31:20'
+          attributes: [RW]
+          por: 0
+          desc: frame terminal count
+

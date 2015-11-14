@@ -1,0 +1,66 @@
+# =================================================================== 
+# BLOCK: Sub Block
+# ===================================================================
+  name: sub
+  awidth: 16
+  dwidth: 32
+  rd_error: 32'hDEAD_0000
+  desc: Sub Control
+
+  registers:
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: control
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - name: control
+      address: 0x0001
+      desc: Sub control 
+
+      fields: # ~~~~~~~~~~~~~~~~~~~
+        - name: enable
+          bit_pos: '0'
+          attributes: [RW]
+          por: 0
+          desc: Enable
+
+        - name: mode
+          bit_pos: '3:1'
+          attributes: [RW]
+          por: 0
+          desc: Operation mode
+
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: delay
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - name:    min_delay
+      address: 0x0002
+      desc:    Minimum Packet Delay
+
+      fields:
+        - name: min_delay_a
+          bit_pos: '15:0'
+          attributes: [RW, RP, WPA]
+          por: 0
+          desc: Sub Minimum delay (us)
+        - name: min_delay_b
+          bit_pos: '31:16'
+          attributes: [RW, RP, WPA]
+          por: 0x1111
+          desc: Sub Minimum delay (us)
+
+    - name:    max_delay
+      address: 0x0002
+      desc:    Maximum Packet Delay
+
+      fields:
+        - name: max_delay_a
+          bit_pos: '15:0'
+          attributes: [RW, RP, WPA]
+          por: 0
+          desc: Sub maximum delay (us)
+        - name: max_delay_b
+          bit_pos: '31:16'
+          attributes: [RW, RP, WPA]
+          por: 0x1111
+          desc: Sub maximum delay (us)
+

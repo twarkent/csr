@@ -1,0 +1,39 @@
+# =================================================================== 
+# BLOCK: block B
+# ===================================================================
+  name: blk_b
+  awidth: 16
+  dwidth: 32
+  rd_error: 32'hDEAD_BBBB
+  desc: Block B control
+
+  registers:
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: irq_enable
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - name: irq_enable
+      address: 0x0010
+      desc: Enable Interrupts
+
+      fields: # ~~~~~~~~~~~~~~~~~~~
+        - name: enable
+          bit_pos: '15:0'
+          attributes: [RW]
+          por: 0
+          desc: Enable Interrupts
+
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: irq_status
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    - name:    irq_status
+      address: 0x0020
+      desc:    Interrupt Status
+
+      fields: # ~~~~~~~~~~~~~~~~~~~
+        - name: irq_status
+          bit_pos: '15:0'
+          attributes: [W1C]
+          por: 0
+          desc: Interrupt Status. 
+
