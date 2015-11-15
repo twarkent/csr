@@ -257,7 +257,7 @@ class CsrMap(object):
 	print "// -------------------------------------------------------------------------------------------------"
   
 
-def csr_txt(reg, base_addr, awidth, dwidth):
+def print_csr_txt(reg, base_addr, awidth, dwidth):
     margin = 3
     reg_addr = base_addr + reg['address']
     addr_disp_len = awidth/4 + 2
@@ -403,12 +403,10 @@ def print_txt_blocks(blocks):
         print "    DWIDTH = %s"   % dwidth
 
         for reg in block['csr']['registers']:
-            csr_txt(reg, base_addr, awidth, dwidth)
+            print_csr_txt(reg, base_addr, awidth, dwidth)
 
         try:
             for b in block['csr']['blocks']:
-#               print "   Sub-block: %s" % b['name']
-#               print "   ",b.viewkeys()
                 print_txt_blocks(block['csr']['blocks'])
         except:
             pass
@@ -429,36 +427,8 @@ def print_txt(csr):
     disp = cpu_awidth/4 + 2
 
     print_txt_blocks(blocks) 
-#    for block in blocks:
-##       print block.viewkeys()
-#        base_addr = block['base_addr']
-#        print "  BLOCK: %s %s (%s): %s" % ( block['csr']['name'], str(hex(block['base_addr'])), block['file'], block['csr']['desc'])
-#        awidth = block['csr']['awidth']
-#        dwidth = block['csr']['dwidth']
-##       disp = awidth/4 + 2
-#        print "    AWIDTH = %s"   % awidth
-#        print "    DWIDTH = %s"   % dwidth
-##       print "    Desc   = %s\n" % block['csr']['desc']
-#
-#        for reg in block['csr']['registers']:
-#            csr_txt(reg, base_addr, awidth, dwidth)
-##           reg_addr = base_addr + reg['address']
-##           addr = "{0:#0{1}x}".format(reg_addr, disp)
-##           print "  %s: %s - %s" % (addr, reg['name'], reg['desc'])
-##           print "   ",reg.viewkeys()
-##           for field in reg['fields']:
-##               print "     FIELD: ", field['name'], field['attributes'], field['bit_pos']
-##               print "     ", field.viewkeys()
-##           print ""
-#
-#        try:
-#            for b in block['csr']['blocks']:
-#                print "   Sub-block: %s" % b['name']
-#                print "   ",b.viewkeys()
-#        except:
-#            pass
-#        print ""
          
+
 def main():
 
   args = arg_parser()
@@ -469,32 +439,10 @@ def main():
   # The logger must be setup/configured in order to create objects
   log = logger(args)
 
-# log.info('----------------------------------')
-# log.info('Control Status Register Generation')
-# log.info('----------------------------------')
-# log.info('Command-Line Arguments:')
 
   csr = CsrMap(args.yaml)
   print_txt(csr)
 
-# design = csr.map['design']
-# blocks = design['blocks']
-# for block in blocks:
-#     print block.viewkeys()
-#     print "Block: %s %s (%s)" % ( block['csr']['name'], str(hex(block['base_addr'])), block['file'])
-#     awidth = block['csr']['awidth']
-#     disp = awidth/4 + 2
-#     print "  AWIDTH = %s"   % block['csr']['awidth']
-#     print "  DWIDTH = %s"   % block['csr']['dwidth']
-#     print "  Desc   = %s\n" % block['csr']['desc']
-#     for r in block['csr']['registers']:
-#         addr = "{0:#0{1}x}".format(r['address'], disp)
-#         print "  %s: %s - %s" % (addr, r['name'], r['desc'])
-#         print "   ",r.viewkeys()
-#         for f in r['fields']:
-#             print "     FIELD: ", f['name'], f['attributes'], f['bit_pos']
-#             print "     ", f.viewkeys()
-#         print ""
 
   pp = pprint.PrettyPrinter(indent=2)
 # pp.pprint(csr.map)
@@ -513,16 +461,3 @@ if __name__ == '__main__':
 #   1.0     2015/11/07  Tim Warkentin     Initial Version.
 # -----------------------------------------------------------------------------
   
-
-
-
-def line_draw(line):
-    for c in line:
-        if c in line_chars:
-            sys.stdout.write(line_chars[c])
-        else:
-            sys.stdout.write(c)
-
-
-
-
