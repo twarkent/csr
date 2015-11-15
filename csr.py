@@ -179,7 +179,7 @@ class CsrMap(object):
         if blocks == 0:
             return 0
         for index, block in enumerate(blocks):
-            print "Load File: %s" % (block['file'])
+            log.debug("Load File: %s" % (block['file']))
             log.info( "%s : %s" %(block['name'], block['file']))
 
             csr_map = self.yaml_load(block['file'], parent_file=parent_file)
@@ -193,17 +193,28 @@ class CsrMap(object):
 
             self.load_sub_blocks(sub_blocks, parent_file=block['file'])
 
+    def rtl_gen_block(self, cpu=None, blocks=None):
+        for block in blocks:
+            self.rtl_gen_header(cpu=cpu, block=block)
+            try:
+                sub_blocks = block['csr']['blocks']
+                print sub_blocks.viewkeys()
+                rtl_gen_block(cpu=cpu, blocks=sub_blocks)
+            except:
+                sub_blocks = 0
 
     def rtl_gen(self):
         design = self.map['design']
         blocks = design['blocks']
-        for block in blocks:
-          for reg in block['csr']:
-             print len(reg)
-  
+        cpu    = design['cpu']
+        cpu_awidth = cpu['awidth']
+        disp = cpu_awidth/4 + 2
+        self.rtl_gen_block(cpu=cpu, blocks=blocks)
+
+
 
     # ------------------------------------------------------------------------------
-    def rtl_header(self, cpu, cpu_clk, block_name):
+    def rtl_gen_header(self, cpu, block):
 
 	now = time.localtime()
 	date = "%s/%02d/%02d" %(str(now.tm_year), now.tm_mon, now.tm_mday)
@@ -219,12 +230,12 @@ class CsrMap(object):
 	print '//   agreements you have entered into with Ixia. Distributed to licensed users or owners.'
 	print '//'
 	print '// --------------------------------------------------------------------------------------------------'
-	print '// FILE NAME      : %s_csr.v' % block_name
+	print '// FILE NAME      : %s_csr.v' % block['name']
 	print '// CURRENT AUTHOR : csr script'          
 	print '// --------------------------------------------------------------------------------------------------'
-	print '// KEYWORDS: %s control status registers.' % block_name
+	print '// KEYWORDS: %s control status registers.' % block['name']
 	print '// --------------------------------------------------------------------------------------------------'
-	print '// PURPOSE:  %s %s control status registers.' %(cpu, block_name)
+	print '// PURPOSE:  %s %s control status registers.' %(cpu['name'],  block['name'])
 	print '// --------------------------------------------------------------------------------------------------'
 	print '// Parameters'
 	print '//   NAME              DEFAULT      DESCRIPTION'
@@ -232,7 +243,7 @@ class CsrMap(object):
 	print '// --------------------------------------------------------------------------------------------------'
 	print '// Reuse Issues:'
 	print '//   Reset Strategy:      Synchronous'
-	print '//   Clock Domains:       %s' % cpu_clk
+	print '//   Clock Domains:       %s' % cpu['signals']['clock']
 	print '//   Critical Timing:     None'
 	print '//   Test Features:       None'
 	print '//   Asynchronous I/F:    None'
@@ -427,6 +438,22 @@ def print_txt(csr):
     disp = cpu_awidth/4 + 2
 
     print_txt_blocks(blocks) 
+
+def print_rtl(csr):
+
+    design = csr.map['design']
+    blocks = design['blocks']
+    cpu    = design['cpu']
+
+    print '\n'
+    print 'Design: %s - %s\n' % (design['name'], design['desc'])
+    print '  CPU: %s  Bus: %s\n' % (cpu['name'], cpu['bus'])
+
+    cpu_awidth = cpu['awidth']
+    disp = cpu_awidth/4 + 2
+
+    print_txt_blocks(blocks) 
+         
          
 
 def main():
@@ -441,7 +468,8 @@ def main():
 
 
   csr = CsrMap(args.yaml)
-  print_txt(csr)
+  csr.rtl_gen()
+# print_txt(csr)
 
 
   pp = pprint.PrettyPrinter(indent=2)
