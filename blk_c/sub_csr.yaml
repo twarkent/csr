@@ -3,7 +3,7 @@
 # ===================================================================
   name: sub
   awidth: 16
-  dwidth: 32
+  dwidth: 8
   rd_error: 32'hDEAD_0000
   desc: Sub Control
 
@@ -38,12 +38,12 @@
 
       fields:
         - name: min_delay_a
-          bit_pos: '15:0'
+          bit_pos: '3:0'
           attributes: [RW, RP, WPA]
           por: 0
           desc: Sub Minimum delay (us)
         - name: min_delay_b
-          bit_pos: '31:16'
+          bit_pos: '7:4'
           attributes: [RW, RP, WPA]
           por: 0x1111
           desc: Sub Minimum delay (us)
@@ -54,12 +54,12 @@
 
       fields:
         - name: max_delay_a
-          bit_pos: '15:0'
+          bit_pos: '3:0'
           attributes: [RW, RP, WPA]
           por: 0
           desc: Sub maximum delay (us)
         - name: max_delay_b
-          bit_pos: '31:16'
+          bit_pos: '7:4'
           attributes: [RW, RP, WPA]
           por: 0x1111
           desc: Sub maximum delay (us)

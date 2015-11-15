@@ -26,7 +26,7 @@ design:
     name:   Freescale
     bus:    PCIe
     awidth: 20
-    dwidth: 32
+    dwidth: 64
     access: sync       # Interface synchronized to destination clock
     decode: 4          # Use upper 4 bits for block decoding
 

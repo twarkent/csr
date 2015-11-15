@@ -19,7 +19,7 @@
 
   name: blk_a
   awidth: 16
-  dwidth: 32
+  dwidth: 48
   rd_error: 32'hDEAD_AAAA
   desc: block A control
 

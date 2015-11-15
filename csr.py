@@ -1,4 +1,5 @@
-#! /usr/bin/python
+#! /usr/bin/env python
+# encoding: utf-8
 
 # ------------------------------------------------------------------------------
 # FILE NAME      : csr.py
@@ -27,6 +28,35 @@ import pprint
 
 log = logging.getLogger('csr_logger')
 
+class color:
+    PURPLE    = '\033[95m'
+    CYAN      = '\033[96m'
+    DARKCYAN  = '\033[36m'
+    BLUE      = '\033[94m'
+    GREEN     = '\033[92m'
+    YELLOW    = '\033[93m'
+    RED       = '\033[91m'
+    BOLD      = '\033[1m'
+    UNDERLINE = '\033[4m'
+    END       = '\033[0m'
+
+#line_chars = {
+#    'a':'┌',   '~':'─',   'v':'┬',   'b':'┐', 
+#    'l':'│',   '+':'┼',   'k':'╷', 
+#    '>':'├',                         '<':'┤',
+#    'c':'└',              '^':'┴',   'd':'┘',   
+#}
+
+# ┌ ─ ─┬ ─┬ ── ─ ─┬ ──┐  
+# │    ┼  │          ╷ 
+# ├       ┤
+# └   ┴   ┘
+
+
+#print "┌──┬──┬──┬──┐"
+#print "│  │  │  │  │"
+#print "└──┴──┴──┴──┘"
+#print "├ ─ ┤"
 # ------------------------------------------------------------------------------
 def arg_parser():
 
@@ -228,130 +258,105 @@ class CsrMap(object):
   
 
 def csr_txt(reg, base_addr, awidth, dwidth):
-    margin = 1
+    margin = 3
     reg_addr = base_addr + reg['address']
     addr_disp = awidth/4 + 2
     data_disp = dwidth/4 + 2
+
     addr = "{0:#0{1}x}".format(reg_addr, addr_disp)
 
-    print "  %s: %s - %s" % (addr, reg['name'], reg['desc'])
+    print ''
+    print '    REGISTER: ' + addr + ': ' + reg['name'] + ' - ' + reg['desc']
+   
 
     lines = []
-    chars = []
 
     # Line #1
-    chars.append(unichr(0x250c))
+    #print "┌ ─ ─ ┬ ─ ─ ┬ ─ ─ ┬ ─ ─ ┐"
+    #print "│     │     │     │     │"
+    #print "└ ─ ─ ┴ ─ ─ ┴ ─ ─ ┴ ─ ─ ┘"
+    #print "├ ─ ─ ┼                 ┤"
+    #print "│     │     │     │     │"
+    #print "└ ─ ─ ┴ ─ ─ ┴ ─ ─ ┴ ─ ─ ┘"
+    line = '┌'
     for i in range(dwidth-1):
-        chars.append(unichr(0x2500)*2)
-        chars.append(unichr(0x252c))
-    chars.append(unichr(0x2500)*2)
-    chars.append(unichr(0x2510))
-    lines.append(chars)
+        line = line + '──┬'
+    line = line + '──┐'
+    lines.append(line)
 
     # Line #2
-    chars = []
-    chars.append(unichr(0x2502))
+    line = '│'
     for i in range(dwidth-1,-1,-1):
-        b = str('%02d' % i)
-        chars.append(unicode(b, 'utf-8'))
-        chars.append(unichr(0x2502))
-    lines.append(chars)
+        line = line + str('%02d' % i)
+        line = line + '│'
+    lines.append(line)
 
     # Line #3
-    chars = []
-    chars.append(unichr(0x251c))
-    chars.append(unichr(0x2500)*(3*dwidth-1))
-    chars.append(unichr(0x2524))
-    lines.append(chars)
+    line = '├'
+    line = line + '─' * (3*dwidth-1)
+    line = line + '┤'
+    lines.append(line)
 
     # Line #4
+    bits = [0] * dwidth
     bit_pos = []
-#   chars = []
-#   chars.append(' ')
-#   chars.append(' ')
-#   chars.append(' ')
-#   vertical = unichr(0x2502)
     for b in range(dwidth):
-        bit_pos.append(u'   ')
-#   chars[0] = vertical
-    bit_pos[31] = u"|  "
-    bit_pos[0]  = u"  |"
+        bit_pos.append('|  ') 
+      
+    bit_pos[dwidth-1] = '│  '
+    bit_pos[0]  = '   │' 
+
     bit_pos_max = 0
     bit_pos_min = 0
     for field in reg['fields']:
         field_bit_pos = field['bit_pos'].split(':')
+        bit_pos_max = int(field_bit_pos[0])
+        bit_pos_min = bit_pos_max
         if len(field_bit_pos) == 2: 
-            bit_pos_max = int(field_bit_pos[0])
             bit_pos_min = int(field_bit_pos[1])
-        else:
-            bit_pos_max = int(field_bit_pos[0])
-            bit_pos_min = bit_pos_max
-#       print "MAX:", bit_pos_max, "MIN:", bit_pos_min
-        for b in range(bit_pos_max, bit_pos_min-1, -1):
-            bit_pos[b] = u'---'
-            if b == bit_pos_max:            bit_pos[b] = u'|--'
-            if b == 0:                      bit_pos[b] = u'---|'
-            if b == 31:                     bit_pos[b] = u'|--'
-            if b == 0 and b==bit_pos_max:   bit_pos[b] = u'|--|'
-            elif bit_pos_min==bit_pos_max:  bit_pos[b] = u'|--'
 
+        for b in range(bit_pos_max, bit_pos_min-1, -1):
+            bits[b] = True
+            bit_pos[b] = '---'
+            if b == bit_pos_max:            bit_pos[b] = '|--'
+            if b == 0:                      bit_pos[b] = '---│'
+            if b == (dwidth-1):             bit_pos[b] = '│--'
+            if b == 0 and b==bit_pos_max:   bit_pos[b] = '|--│'
+            elif bit_pos_min==bit_pos_max:  bit_pos[b] = '|--'
+
+#   print 'BITS: ', bits
     chars =  ''.join(bit_pos[::-1])
     lines.append(chars)
 
     # Line #5
-    chars = []
-    chars.append(unichr(0x2514))
-    chars.append(unichr(0x2500)*(3*dwidth-1))
-    chars.append(unichr(0x2518))
-    lines.append(chars)
+    line = '└'
+    line = line + '─' * (3*dwidth-1)
+    line = line + '┘'
+    lines.append(line)
+    lines.append('')
 
-    chars = []
-    lines.append(chars)
+    line = ' Bit-Pos Field                Default    Attributes       Description'
+    lines.append(line)
 
-    chars = []
-    chars.append(u' Bit-Pos Field            Default     Attributes  Description')
-    lines.append(chars)
+    line = ' ─────── ──────────────────── ────────── ───────────────  ─────────────────────────────────────────────────'
+    lines.append(line)
 
-    chars = []
-    chars.append(unichr(0x0020))         # space
-    chars.append(unichr(0x2500)*7)       # line
-    chars.append(unichr(0x0020))
-    chars.append(unichr(0x2500)*16)
-    chars.append(unichr(0x0020))
-    chars.append(unichr(0x2500)*11)
-    chars.append(unichr(0x0020))
-    chars.append(unichr(0x2500)*11)
-    chars.append(unichr(0x0020))
-    chars.append(unichr(0x2500)*46)
-    lines.append(chars)
-
-    for c in lines:
+    for line in lines:
         print ' '*margin,
-#       print unicode.join(u'', c)
+        print ''.join(line)
 
     for field in reg['fields']:
         bit_pos = '[%s]' % field['bit_pos']
         por =  int(field['por'])
         por = "{0:#0{1}x}".format(por, data_disp)
         attributes = ' '.join(field['attributes'])
-        print "   %7s %-15s  %s  %-12s%s "% (bit_pos, field['name'], por, attributes, field['desc'])
+        print ' '*margin,
+        print " %7s %-20s %s %-17s%s "% (bit_pos, field['name'], por, attributes, field['desc'])
+
     print ""
     print ""
   
-
-def print_txt(csr):
-
-    design = csr.map['design']
-    blocks = design['blocks']
-    cpu    = design['cpu']
-
-    print '\n'
-    print 'Design: %s - %s\n' % (design['name'], design['desc'])
-    print '  CPU: %s  Bus: %s\n' % (cpu['name'], cpu['bus'])
-
-    cpu_awidth = cpu['awidth']
-    disp = cpu_awidth/4 + 2
-
+def process_blocks(blocks):
     for block in blocks:
 #       print block.viewkeys()
         base_addr = block['base_addr']
@@ -378,9 +383,54 @@ def print_txt(csr):
             for b in block['csr']['blocks']:
                 print "   Sub-block: %s" % b['name']
                 print "   ",b.viewkeys()
+                process_blocks(block['csr']['blocks'])
         except:
             pass
         print ""
+
+def print_txt(csr):
+
+    design = csr.map['design']
+    blocks = design['blocks']
+    cpu    = design['cpu']
+
+    print '\n'
+    print 'Design: %s - %s\n' % (design['name'], design['desc'])
+    print '  CPU: %s  Bus: %s\n' % (cpu['name'], cpu['bus'])
+
+    cpu_awidth = cpu['awidth']
+    disp = cpu_awidth/4 + 2
+
+    process_blocks(blocks) 
+#    for block in blocks:
+##       print block.viewkeys()
+#        base_addr = block['base_addr']
+#        print "  BLOCK: %s %s (%s): %s" % ( block['csr']['name'], str(hex(block['base_addr'])), block['file'], block['csr']['desc'])
+#        awidth = block['csr']['awidth']
+#        dwidth = block['csr']['dwidth']
+##       disp = awidth/4 + 2
+#        print "    AWIDTH = %s"   % awidth
+#        print "    DWIDTH = %s"   % dwidth
+##       print "    Desc   = %s\n" % block['csr']['desc']
+#
+#        for reg in block['csr']['registers']:
+#            csr_txt(reg, base_addr, awidth, dwidth)
+##           reg_addr = base_addr + reg['address']
+##           addr = "{0:#0{1}x}".format(reg_addr, disp)
+##           print "  %s: %s - %s" % (addr, reg['name'], reg['desc'])
+##           print "   ",reg.viewkeys()
+##           for field in reg['fields']:
+##               print "     FIELD: ", field['name'], field['attributes'], field['bit_pos']
+##               print "     ", field.viewkeys()
+##           print ""
+#
+#        try:
+#            for b in block['csr']['blocks']:
+#                print "   Sub-block: %s" % b['name']
+#                print "   ",b.viewkeys()
+#        except:
+#            pass
+#        print ""
          
 def main():
 
@@ -436,3 +486,16 @@ if __name__ == '__main__':
 #   1.0     2015/11/07  Tim Warkentin     Initial Version.
 # -----------------------------------------------------------------------------
   
+
+
+
+def line_draw(line):
+    for c in line:
+        if c in line_chars:
+            sys.stdout.write(line_chars[c])
+        else:
+            sys.stdout.write(c)
+
+
+
+
