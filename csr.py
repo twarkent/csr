@@ -260,10 +260,10 @@ class CsrMap(object):
 def csr_txt(reg, base_addr, awidth, dwidth):
     margin = 3
     reg_addr = base_addr + reg['address']
-    addr_disp = awidth/4 + 2
-    data_disp = dwidth/4 + 2
+    addr_disp_len = awidth/4 + 2
+    data_disp_len = dwidth/4 + 2
 
-    addr = "{0:#0{1}x}".format(reg_addr, addr_disp)
+    addr = "{0:#0{1}x}".format(reg_addr, addr_disp_len)
 
     print ''
     print '    REGISTER: ' + addr + ': ' + reg['name'] + ' - ' + reg['desc']
@@ -324,7 +324,6 @@ def csr_txt(reg, base_addr, awidth, dwidth):
             if b == 0 and b==bit_pos_max:   bit_pos[b] = '|--│'
             elif bit_pos_min==bit_pos_max:  bit_pos[b] = '|--'
 
-#   print 'BITS: ', bits
     chars =  ''.join(bit_pos[::-1])
     lines.append(chars)
 
@@ -335,58 +334,86 @@ def csr_txt(reg, base_addr, awidth, dwidth):
     lines.append(line)
     lines.append('')
 
-    line = ' Bit-Pos Field                Default    Attributes       Description'
+    # Determine length of longest field name
+    field_max = 0
+    for field in reg['fields']:
+        if len(field['name']) > field_max:
+            field_max = len(field['name'])
+
+    label = []
+    label.append('Bit-Pos')
+    label.append('Field')
+    label.append('Default')
+    label.append('Attributes')
+    label.append('Description')
+ 
+    if data_disp_len < 8:
+        default_max = 8 
+    else:
+        default_max = data_disp_len + 1
+
+    col_width = [8, field_max+2, default_max, 15, 40]
+    underline = '─' 
+
+    line = ''
+    for i in range(len(col_width)):
+        line = line + '{:{}s}{}'.format(label[i], col_width[i], ' ')
     lines.append(line)
 
-    line = ' ─────── ──────────────────── ────────── ───────────────  ─────────────────────────────────────────────────'
+    line = ''
+    for i in range(len(col_width)):
+        line = line + '{:{}s}{}'.format(underline*col_width[i],col_width[i], ' ')
     lines.append(line)
 
     for line in lines:
         print ' '*margin,
         print ''.join(line)
-
+      
     for field in reg['fields']:
         bit_pos = '[%s]' % field['bit_pos']
         por =  int(field['por'])
-        por = "{0:#0{1}x}".format(por, data_disp)
-        attributes = ' '.join(field['attributes'])
+        por = "{0:#0{1}x}".format(por, data_disp_len)
+        attributes = ','.join(field['attributes'])
+
+        data = []
+        data.append(bit_pos)
+        data.append(field['name'])
+        data.append(por)
+        data.append(attributes)
+        data.append(field['desc'])
+
         print ' '*margin,
-        print " %7s %-20s %s %-17s%s "% (bit_pos, field['name'], por, attributes, field['desc'])
+        # Right justify first column (bit-width)
+        line = '{:>8}{}'.format(bit_pos,' ') 
+        for i in range(1, len(col_width)):
+            line = line + '{:{}s}{}'.format(data[i], col_width[i], ' ')
+        print line
 
     print ""
     print ""
+
   
-def process_blocks(blocks):
+def print_txt_blocks(blocks):
     for block in blocks:
-#       print block.viewkeys()
         base_addr = block['base_addr']
         print "  BLOCK: %s %s (%s): %s" % ( block['csr']['name'], str(hex(block['base_addr'])), block['file'], block['csr']['desc'])
         awidth = block['csr']['awidth']
         dwidth = block['csr']['dwidth']
-#       disp = awidth/4 + 2
         print "    AWIDTH = %s"   % awidth
         print "    DWIDTH = %s"   % dwidth
-#       print "    Desc   = %s\n" % block['csr']['desc']
 
         for reg in block['csr']['registers']:
             csr_txt(reg, base_addr, awidth, dwidth)
-#           reg_addr = base_addr + reg['address']
-#           addr = "{0:#0{1}x}".format(reg_addr, disp)
-#           print "  %s: %s - %s" % (addr, reg['name'], reg['desc'])
-#           print "   ",reg.viewkeys()
-#           for field in reg['fields']:
-#               print "     FIELD: ", field['name'], field['attributes'], field['bit_pos']
-#               print "     ", field.viewkeys()
-#           print ""
 
         try:
             for b in block['csr']['blocks']:
-                print "   Sub-block: %s" % b['name']
-                print "   ",b.viewkeys()
-                process_blocks(block['csr']['blocks'])
+#               print "   Sub-block: %s" % b['name']
+#               print "   ",b.viewkeys()
+                print_txt_blocks(block['csr']['blocks'])
         except:
             pass
         print ""
+
 
 def print_txt(csr):
 
@@ -401,7 +428,7 @@ def print_txt(csr):
     cpu_awidth = cpu['awidth']
     disp = cpu_awidth/4 + 2
 
-    process_blocks(blocks) 
+    print_txt_blocks(blocks) 
 #    for block in blocks:
 ##       print block.viewkeys()
 #        base_addr = block['base_addr']
