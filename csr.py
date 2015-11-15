@@ -198,11 +198,17 @@ class CsrMap(object):
         for block in blocks:
             self.rtl_gen_header(cpu=cpu, block=block)
             try:
-                sub_blocks = block['csr']['blocks']
-                print sub_blocks.viewkeys()
-                rtl_gen_block(cpu=cpu, blocks=sub_blocks)
+                for b in block['csr']['blocks']:
+                    self.rtl_gen_block(cpu=cpu, blocks=block['csr']['blocks'])
             except:
-                sub_blocks = 0
+                pass
+
+#           for b in block['csr']['blocks']:
+#               self.rtl_gen_blocks(block['csr']['blocks'], base=base_addr, path=block_path+'/')
+#       for reg in block['csr']['registers']:
+#           print_txt_csr(reg, base_addr, awidth, dwidth)
+
+#       print ""
 
     def rtl_gen(self):
         design = self.map['design']
@@ -371,6 +377,7 @@ def print_txt_csr(reg, base_addr, awidth, dwidth):
         line = line + '{:{}s}{}'.format(underline*col_width[i],col_width[i], ' ')
     lines.append(line)
 
+    # print the header
     for line in lines:
         print ' '*margin,
         print ''.join(line)
@@ -386,7 +393,6 @@ def print_txt_csr(reg, base_addr, awidth, dwidth):
         data.append(field['name'])
         data.append(por)
         data.append(attributes)
-#       data.append(field['desc'])
 
         print ' '*margin,
 
@@ -399,14 +405,13 @@ def print_txt_csr(reg, base_addr, awidth, dwidth):
         # Deal with the description which may use several lines
         line_margin = margin + len(line) + 1
         desc = field['desc'].split('\n')
-#       desc = textwrap.wrap(field['desc'], 40)
         line = line + desc[0]
         print line
         if len(desc) > 1:
- 
             for d in range(1,len(desc)):
                 line = ' ' * line_margin + desc[d]
-                print line.rstrip()
+#               print line.rstrip()
+                print line
 
     print '\n'
 
@@ -480,7 +485,7 @@ def main():
 
   csr = CsrMap(args.yaml)
   csr.rtl_gen()
-# print_txt(csr)
+  print_txt(csr)
 
   pp = pprint.PrettyPrinter(indent=2)
 # pp.pprint(csr.map)
