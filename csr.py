@@ -25,6 +25,7 @@ import traceback
 import collections
 import yaml
 import pprint
+import textwrap
 
 log = logging.getLogger('csr_logger')
 
@@ -268,8 +269,8 @@ class CsrMap(object):
 	print "// -------------------------------------------------------------------------------------------------"
   
 
-def print_csr_txt(reg, base_addr, awidth, dwidth):
-    margin = 3
+def print_txt_csr(reg, base_addr, awidth, dwidth):
+    margin = 12
     reg_addr = base_addr + reg['address']
     addr_disp_len = awidth/4 + 2
     data_disp_len = dwidth/4 + 2
@@ -277,18 +278,11 @@ def print_csr_txt(reg, base_addr, awidth, dwidth):
     addr = "{0:#0{1}x}".format(reg_addr, addr_disp_len)
 
     print ''
-    print '    REGISTER: ' + addr + ': ' + reg['name'] + ' - ' + reg['desc']
-   
+    print '{:>11}  {} - {}'.format(addr, reg['name'], reg['desc'])
 
     lines = []
 
     # Line #1
-    #print "┌ ─ ─ ┬ ─ ─ ┬ ─ ─ ┬ ─ ─ ┐"
-    #print "│     │     │     │     │"
-    #print "└ ─ ─ ┴ ─ ─ ┴ ─ ─ ┴ ─ ─ ┘"
-    #print "├ ─ ─ ┼                 ┤"
-    #print "│     │     │     │     │"
-    #print "└ ─ ─ ┴ ─ ─ ┴ ─ ─ ┴ ─ ─ ┘"
     line = '┌'
     for i in range(dwidth-1):
         line = line + '──┬'
@@ -351,6 +345,7 @@ def print_csr_txt(reg, base_addr, awidth, dwidth):
         if len(field['name']) > field_max:
             field_max = len(field['name'])
 
+    # Print Header for Register
     label = []
     label.append('Bit-Pos')
     label.append('Field')
@@ -381,9 +376,9 @@ def print_csr_txt(reg, base_addr, awidth, dwidth):
         print ''.join(line)
       
     for field in reg['fields']:
-        bit_pos = '[%s]' % field['bit_pos']
-        por =  int(field['por'])
-        por = "{0:#0{1}x}".format(por, data_disp_len)
+        bit_pos    = '[%s]' % field['bit_pos']
+        por        = int(field['por'])
+        por        = "{0:#0{1}x}".format(por, data_disp_len)
         attributes = ','.join(field['attributes'])
 
         data = []
@@ -391,34 +386,54 @@ def print_csr_txt(reg, base_addr, awidth, dwidth):
         data.append(field['name'])
         data.append(por)
         data.append(attributes)
-        data.append(field['desc'])
+#       data.append(field['desc'])
 
         print ' '*margin,
+
         # Right justify first column (bit-width)
         line = '{:>8}{}'.format(bit_pos,' ') 
-        for i in range(1, len(col_width)):
-            line = line + '{:{}s}{}'.format(data[i], col_width[i], ' ')
-        print line
 
-    print ""
-    print ""
+        for i in range(1, len(data)):
+            line = line + '{:{}s}{}'.format(data[i], col_width[i], ' ')
+
+        # Deal with the description which may use several lines
+        line_margin = margin + len(line) + 1
+        desc = field['desc'].split('\n')
+#       desc = textwrap.wrap(field['desc'], 40)
+        line = line + desc[0]
+        print line
+        if len(desc) > 1:
+ 
+            for d in range(1,len(desc)):
+                line = ' ' * line_margin + desc[d]
+                print line.rstrip()
+
+    print '\n'
 
   
-def print_txt_blocks(blocks):
+def print_txt_blocks(blocks, base=0, path=''):
     for block in blocks:
-        base_addr = block['base_addr']
-        print "  BLOCK: %s %s (%s): %s" % ( block['csr']['name'], str(hex(block['base_addr'])), block['file'], block['csr']['desc'])
+        base_addr  = base + block['base_addr']
+        file = path + block['file']
+        block_path, block_file = os.path.split(file)
+
+#       print '  ' + '─' * 80
+        print '  BLOCK: %s - %s (%s)' % ( block['csr']['name'], block['csr']['desc'], file)
+        print '  ' + '─' * 80
+        print '    Base Address:  %s' % str(hex(base_addr))
+#       print '    File:          %s' % file
+
         awidth = block['csr']['awidth']
         dwidth = block['csr']['dwidth']
-        print "    AWIDTH = %s"   % awidth
-        print "    DWIDTH = %s"   % dwidth
+        print '    Address Width: %s' % awidth
+        print '    Data Width:    %s' % dwidth
 
         for reg in block['csr']['registers']:
-            print_csr_txt(reg, base_addr, awidth, dwidth)
+            print_txt_csr(reg, base_addr, awidth, dwidth)
 
         try:
             for b in block['csr']['blocks']:
-                print_txt_blocks(block['csr']['blocks'])
+                print_txt_blocks(block['csr']['blocks'], base=base_addr, path=block_path+'/')
         except:
             pass
         print ""
@@ -433,9 +448,6 @@ def print_txt(csr):
     print '\n'
     print 'Design: %s - %s\n' % (design['name'], design['desc'])
     print '  CPU: %s  Bus: %s\n' % (cpu['name'], cpu['bus'])
-
-    cpu_awidth = cpu['awidth']
-    disp = cpu_awidth/4 + 2
 
     print_txt_blocks(blocks) 
 
@@ -466,11 +478,9 @@ def main():
   # The logger must be setup/configured in order to create objects
   log = logger(args)
 
-
   csr = CsrMap(args.yaml)
   csr.rtl_gen()
 # print_txt(csr)
-
 
   pp = pprint.PrettyPrinter(indent=2)
 # pp.pprint(csr.map)
@@ -489,3 +499,9 @@ if __name__ == '__main__':
 #   1.0     2015/11/07  Tim Warkentin     Initial Version.
 # -----------------------------------------------------------------------------
   
+# print "┌ ─ ─ ┬ ─ ─ ┬ ─ ─ ┬ ─ ─ ┐"
+# print "│     │     │     │     │"
+# print "└ ─ ─ ┴ ─ ─ ┴ ─ ─ ┴ ─ ─ ┘"
+# print "├ ─ ─ ┼                 ┤"
+# print "│     │     │     │     │"
+# print "└ ─ ─ ┴ ─ ─ ┴ ─ ─ ┴ ─ ─ ┘"
