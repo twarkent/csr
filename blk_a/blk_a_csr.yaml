@@ -42,22 +42,25 @@
           bit_pos: '4'
           attributes: [RW]
           por: 0
-          desc:  0 - System Timer is synchronized to the transmit modem frame_sync.
-                 1 - System Timer is free-running
+          desc:  |
+            0 - System Timer is synchronized to the transmit modem frame_sync.
+            1 - System Timer is free-running
 
         - name: test
           bit_pos: '9:8'
           attributes: [WPA]
           por: 0
-          desc:  0 - System Timer is synchronized to the transmit modem frame_sync.
-                 1 - System Timer is free-running
+          desc:  |
+            0 - System Timer is synchronized to the transmit modem frame_sync.
+            1 - System Timer is free-running
 
         - name: master_pll_locked
           bit_pos: '10'
           attributes: [RO]
           por: 0
-          desc:  0 - PLL Locked
-                 1 - PLL Loss of Lock
+          desc: |
+            0 - PLL Locked
+            1 - PLL Loss of Lock
     
         - name: triggers
           bit_pos: '13:12'

@@ -197,18 +197,14 @@ class CsrMap(object):
     def rtl_gen_block(self, cpu=None, blocks=None):
         for block in blocks:
             self.rtl_gen_header(cpu=cpu, block=block)
+            self.rtl_gen_portmap(cpu=cpu, block=block)
+            self.rtl_gen_footer()
             try:
                 for b in block['csr']['blocks']:
                     self.rtl_gen_block(cpu=cpu, blocks=block['csr']['blocks'])
             except:
                 pass
 
-#           for b in block['csr']['blocks']:
-#               self.rtl_gen_blocks(block['csr']['blocks'], base=base_addr, path=block_path+'/')
-#       for reg in block['csr']['registers']:
-#           print_txt_csr(reg, base_addr, awidth, dwidth)
-
-#       print ""
 
     def rtl_gen(self):
         design = self.map['design']
@@ -258,9 +254,28 @@ class CsrMap(object):
 	print '// --------------------------------------------------------------------------------------------------'
 	print ''
 
+    # ------------------------------------------------------------------------------
+    def rtl_gen_portmap(self, cpu, block):
+
+	print 'module %s_csr #(\n' % block['name']
+
+        print '  parameter AWIDTH = %s' % block['csr']['awidth']
+        print '  parameter DWIDTH = %s ) (\n' % block['csr']['dwidth']
+
+        print '  // %s bus interface ---------------' % cpu['name']
+        print '  input %s' % cpu['signals']['clock']
+        print '  input %s' % cpu['signals']['reset']
+        print '  input %s' % cpu['signals']['cs']
+        print '  input %s' % cpu['signals']['read']
+        print '  input %s' % cpu['signals']['write']
+        print '  input %s' % cpu['signals']['address']
+        print '  input %s' % cpu['signals']['write_data']
+        print '  input %s' % cpu['signals']['read_data']
+        print '  );'
+
 
     # ------------------------------------------------------------------------------
-    def print_footer():
+    def rtl_gen_footer(self):
 
         now = time.localtime()
         date = "%s/%02d/%02d" %(str(now.tm_year), now.tm_mon, now.tm_mday)
@@ -271,7 +286,8 @@ class CsrMap(object):
 	print "// Release History"
 	print "//   VERSION DATE       AUTHOR           DESCRIPTION"
 	print "// --------- ---------- ---------------- -----------------------------------------------------------"
-	print "//   1.0     %s csr script       Do not modify. Changes may be overwritten." % date
+	print "//   1.0     %s csr script       Control Status Register Generation." % date
+	print "//                                       Do not modify. Changes may be overwritten."
 	print "// -------------------------------------------------------------------------------------------------"
   
 
@@ -423,8 +439,8 @@ def print_txt_blocks(blocks, base=0, path=''):
         block_path, block_file = os.path.split(file)
 
 #       print '  ' + '─' * 80
-        print '  BLOCK: %s - %s (%s)' % ( block['csr']['name'], block['csr']['desc'], file)
-        print '  ' + '─' * 80
+        print '    BLOCK: %s - %s (%s)' % ( block['csr']['name'], block['csr']['desc'], file)
+        print '    ' + '─' * 80
         print '    Base Address:  %s' % str(hex(base_addr))
 #       print '    File:          %s' % file
 
@@ -484,8 +500,12 @@ def main():
   log = logger(args)
 
   csr = CsrMap(args.yaml)
-  csr.rtl_gen()
-  print_txt(csr)
+
+  if args.rtl:
+      csr.rtl_gen()
+
+  if args.txt:
+      print_txt(csr)
 
   pp = pprint.PrettyPrinter(indent=2)
 # pp.pprint(csr.map)
