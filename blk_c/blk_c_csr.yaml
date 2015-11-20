@@ -15,6 +15,10 @@
       base_addr: 0x2000
       file: sub_csr.yaml
 
+# include: 
+#   - file: reg_file.yaml
+#     base_addr: 0x0010
+
   registers:
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     # register: mode
@@ -38,7 +42,7 @@
 
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # register: delay
+    # register: min_delay
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     - name:    min_delay
       address: 0x0002
@@ -51,6 +55,9 @@
           por: 0
           desc: Minimum delay (us)
 
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # register: max_delay
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     - name: max_delay
       address: 0x0003
       desc: Maximum Packet Delay

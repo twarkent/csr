@@ -16,7 +16,7 @@
       desc: Sub control 
 
       fields: # ~~~~~~~~~~~~~~~~~~~
-        - name: enable
+        - name: sub_enable
           bit_pos: '0'
           attributes: [RW]
           por: 0
@@ -26,7 +26,7 @@
           bit_pos: '3:1'
           attributes: [RW]
           por: 0
-          desc: Operation mode
+          desc: SUB Operation mode
 
 
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -37,12 +37,12 @@
       desc:    Minimum Packet Delay
 
       fields:
-        - name: min_delay_a
+        - name: sub_min_delay_a
           bit_pos: '3:0'
           attributes: [RW, RP, WPA]
           por: 0
           desc: Sub Minimum delay (us)
-        - name: min_delay_b
+        - name: sub_min_delay_b
           bit_pos: '7:4'
           attributes: [RW, RP, WPA]
           por: 0x1111
@@ -53,12 +53,12 @@
       desc:    Maximum Packet Delay
 
       fields:
-        - name: max_delay_a
+        - name: sub_max_delay_a
           bit_pos: '3:0'
           attributes: [RW, RP, WPA]
           por: 0
           desc: Sub maximum delay (us)
-        - name: max_delay_b
+        - name: sub_max_delay_b
           bit_pos: '7:4'
           attributes: [RW, RP, WPA]
           por: 0x1111

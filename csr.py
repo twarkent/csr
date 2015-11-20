@@ -194,65 +194,69 @@ class CsrMap(object):
 
             self.load_sub_blocks(sub_blocks, parent_file=block['file'])
 
-    def rtl_gen_block(self, cpu=None, blocks=None):
+            try:
+                include_files = csr_map['include']
+            except:
+                include_files = 0
+
+            self.load_include_files(include_files, block, parent_file=block['file'])
+
+
+    def load_include_files(self, include_files, block, parent_file):
+        if include_files == 0:
+            return 0 
+        for index, include in enumerate(include_files):
+            include_map = self.yaml_load(include['file'], parent_file=parent_file)
+#           include_map['base_addr'] = include['base_addr']
+            block['csr']['registers'].append(include_map)
+            self.files.append(include['file'])
+        
+    def rtl_gen_block(self, design, cpu, blocks):
+        print "GOT HERE"
+#       for index, block in enumerate(blocks):
         for block in blocks:
-            self.rtl_gen_header(cpu=cpu, block=block)
+            self.rtl_gen_header(design=design, cpu=cpu, block=block)
             self.rtl_gen_portmap(cpu=cpu, block=block)
             self.rtl_gen_footer()
             try:
-                for b in block['csr']['blocks']:
-                    self.rtl_gen_block(cpu=cpu, blocks=block['csr']['blocks'])
+#               self.rtl_gen_block(design=design, cpu=cpu, blocks=blocks[index]['csr']['blocks'])
+                self.rtl_gen_block(design=design, cpu=cpu, blocks=block['csr']['blocks'])
+#               for b in block['csr']['blocks']:
+#                   print b.viewkeys()
+#                   self.rtl_gen_block(design=design, cpu=cpu, blocks=b['csr'])
+#                   self.rtl_gen_block(cpu=cpu, blocks=b['csr']['blocks'])
             except:
                 pass
 
-
+    def rtl_gen_pkg(self, cpu=None, blocks=None):
+        pass
+        
     def rtl_gen(self):
         design = self.map['design']
         blocks = design['blocks']
         cpu    = design['cpu']
-        cpu_awidth = cpu['awidth']
-        disp = cpu_awidth/4 + 2
-        self.rtl_gen_block(cpu=cpu, blocks=blocks)
+        self.rtl_gen_pkg(cpu=cpu, blocks=blocks)
+        self.rtl_gen_block(design=design, cpu=cpu, blocks=blocks)
 
-
-
-    # ------------------------------------------------------------------------------
-    def rtl_gen_header(self, cpu, block):
+    def rtl_gen_header(self, design, cpu, block):
 
 	now = time.localtime()
 	date = "%s/%02d/%02d" %(str(now.tm_year), now.tm_mon, now.tm_mday)
 	year = str(now.tm_year)
+        filename = block['name'] + '_csr.sv'
 
-	print '// --------------------------------------------------------------------------------------------------'
-	print '// Copyright (c) %s  Ixia  All rights reserved.' % year
-	print '//'
-	print '//   This file includes unpublished proprietary source code of Ixia.  The copyright'
-	print '//   notice above does not evidence any actual or intended publication of such'
-	print '//   source code. You shall not disclose such source code (or any related information)'
-	print '//   and shall use it only in accordance with the terms of the license or confidentiality'
-	print '//   agreements you have entered into with Ixia. Distributed to licensed users or owners.'
-	print '//'
-	print '// --------------------------------------------------------------------------------------------------'
-	print '// FILE NAME      : %s_csr.v' % block['name']
-	print '// CURRENT AUTHOR : csr script'          
-	print '// --------------------------------------------------------------------------------------------------'
-	print '// KEYWORDS: %s control status registers.' % block['name']
-	print '// --------------------------------------------------------------------------------------------------'
-	print '// PURPOSE:  %s %s control status registers.' %(cpu['name'],  block['name'])
-	print '// --------------------------------------------------------------------------------------------------'
-	print '// Parameters'
-	print '//   NAME              DEFAULT      DESCRIPTION'
-	print '//   ----------------- ------------ -----------------------------------------------------------------'
-	print '// --------------------------------------------------------------------------------------------------'
-	print '// Reuse Issues:'
-	print '//   Reset Strategy:      Synchronous'
-	print '//   Clock Domains:       %s' % cpu['signals']['clock']
-	print '//   Critical Timing:     None'
-	print '//   Test Features:       None'
-	print '//   Asynchronous I/F:    None'
-	print '//   Synthesizable:       Yes'
-	print '// --------------------------------------------------------------------------------------------------'
-	print ''
+        header = design['header']
+        header = header.split('\n')
+
+        for line in header:
+            line = line.replace('<YEAR>', year)
+            line = line.replace('<FILENAME>', filename)
+            line = line.replace('<BLOCK>', block['name'])
+#           line = line.replace('<PARAMETERS>', year)
+            line = line.replace('<CPU>', cpu['name'])
+            line = line.replace('<CPU_CLOCK>', cpu['signals']['clock'])
+            print line
+
 
     # ------------------------------------------------------------------------------
     def rtl_gen_portmap(self, cpu, block):
@@ -263,14 +267,14 @@ class CsrMap(object):
         print '  parameter DWIDTH = %s ) (\n' % block['csr']['dwidth']
 
         print '  // %s bus interface ---------------' % cpu['name']
-        print '  input %s' % cpu['signals']['clock']
-        print '  input %s' % cpu['signals']['reset']
-        print '  input %s' % cpu['signals']['cs']
-        print '  input %s' % cpu['signals']['read']
-        print '  input %s' % cpu['signals']['write']
-        print '  input %s' % cpu['signals']['address']
-        print '  input %s' % cpu['signals']['write_data']
-        print '  input %s' % cpu['signals']['read_data']
+        print '  input  %s' % cpu['signals']['clock']
+        print '  input  %s' % cpu['signals']['reset']
+        print '  input  %s' % cpu['signals']['cs']
+        print '  input  %s' % cpu['signals']['read']
+        print '  input  %s' % cpu['signals']['write']
+        print '  input  %s' % cpu['signals']['address']
+        print '  input  %s' % cpu['signals']['write_data']
+        print '  input  %s' % cpu['signals']['read_data']
         print '  );'
 
 
@@ -426,9 +430,7 @@ def print_txt_csr(reg, base_addr, awidth, dwidth):
         if len(desc) > 1:
             for d in range(1,len(desc)):
                 line = ' ' * line_margin + desc[d]
-#               print line.rstrip()
                 print line
-
     print '\n'
 
   
@@ -438,11 +440,9 @@ def print_txt_blocks(blocks, base=0, path=''):
         file = path + block['file']
         block_path, block_file = os.path.split(file)
 
-#       print '  ' + '─' * 80
         print '    BLOCK: %s - %s (%s)' % ( block['csr']['name'], block['csr']['desc'], file)
         print '    ' + '─' * 80
         print '    Base Address:  %s' % str(hex(base_addr))
-#       print '    File:          %s' % file
 
         awidth = block['csr']['awidth']
         dwidth = block['csr']['dwidth']
@@ -499,16 +499,16 @@ def main():
   # The logger must be setup/configured in order to create objects
   log = logger(args)
 
-  csr = CsrMap(args.yaml)
+  csr_map = CsrMap(args.yaml)
 
   if args.rtl:
-      csr.rtl_gen()
+      csr_map.rtl_gen()
 
   if args.txt:
-      print_txt(csr)
+      print_txt(csr_map)
 
   pp = pprint.PrettyPrinter(indent=2)
-# pp.pprint(csr.map)
+# pp.pprint(csr_map.map)
 
 
 # -----------------------------------------------------------------------------
