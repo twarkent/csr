@@ -73,7 +73,7 @@ design:
     access: sync       # Interface synchronized to destination clock
     decode: 4          # Use upper 4 bits for block decoding
 
-    signals:
+    interface:
       clock:       clk
       reset:       rst
       cs:          cs

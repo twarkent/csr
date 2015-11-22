@@ -212,19 +212,12 @@ class CsrMap(object):
             self.files.append(include['file'])
         
     def rtl_gen_block(self, design, cpu, blocks):
-        print "GOT HERE"
-#       for index, block in enumerate(blocks):
         for block in blocks:
             self.rtl_gen_header(design=design, cpu=cpu, block=block)
             self.rtl_gen_portmap(cpu=cpu, block=block)
             self.rtl_gen_footer()
             try:
-#               self.rtl_gen_block(design=design, cpu=cpu, blocks=blocks[index]['csr']['blocks'])
                 self.rtl_gen_block(design=design, cpu=cpu, blocks=block['csr']['blocks'])
-#               for b in block['csr']['blocks']:
-#                   print b.viewkeys()
-#                   self.rtl_gen_block(design=design, cpu=cpu, blocks=b['csr'])
-#                   self.rtl_gen_block(cpu=cpu, blocks=b['csr']['blocks'])
             except:
                 pass
 
@@ -254,27 +247,22 @@ class CsrMap(object):
             line = line.replace('<BLOCK>', block['name'])
 #           line = line.replace('<PARAMETERS>', year)
             line = line.replace('<CPU>', cpu['name'])
-            line = line.replace('<CPU_CLOCK>', cpu['signals']['clock'])
+            line = line.replace('<CPU_CLOCK>', cpu['interface']['clock'])
             print line
 
 
     # ------------------------------------------------------------------------------
     def rtl_gen_portmap(self, cpu, block):
 
-	print 'module %s_csr #(\n' % block['name']
+	print 'module %s_csr \n' % block['name']
 
-        print '  parameter AWIDTH = %s' % block['csr']['awidth']
-        print '  parameter DWIDTH = %s ) (\n' % block['csr']['dwidth']
+        print '  import %s_csr_pkg::*;\n' % block['name']
 
-        print '  // %s bus interface ---------------' % cpu['name']
-        print '  input  %s' % cpu['signals']['clock']
-        print '  input  %s' % cpu['signals']['reset']
-        print '  input  %s' % cpu['signals']['cs']
-        print '  input  %s' % cpu['signals']['read']
-        print '  input  %s' % cpu['signals']['write']
-        print '  input  %s' % cpu['signals']['address']
-        print '  input  %s' % cpu['signals']['write_data']
-        print '  input  %s' % cpu['signals']['read_data']
+        print '  ('
+
+        print '    // %s bus interface ---------------' % cpu['name']
+        print '    interface  csr_bus,\n'
+
         print '  );'
 
 
