@@ -221,14 +221,16 @@ class CsrMap(object):
             except:
                 pass
 
-    def rtl_gen_pkg(self, cpu=None, blocks=None):
-        pass
+    def rtl_gen_pkg(self):
+        design = self.map['design']
+        blocks = design['blocks']
+        cpu    = design['cpu']
         
     def rtl_gen(self):
         design = self.map['design']
         blocks = design['blocks']
         cpu    = design['cpu']
-        self.rtl_gen_pkg(cpu=cpu, blocks=blocks)
+        self.rtl_gen_pkg()
         self.rtl_gen_block(design=design, cpu=cpu, blocks=blocks)
 
     def rtl_gen_header(self, design, cpu, block):
