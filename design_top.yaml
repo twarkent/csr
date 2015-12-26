@@ -7,6 +7,12 @@
 #      * W1C         Write '1' to clear
 #      * WP[A]       Create a pulse when written. _A pulse stays asserted until acknowledged
 #      - RP[A]       Create a pulse when read. _A pulse stays asserted until acknowledged
+#      - IOR         Increment on read
+#      - DOR         Decrement on read
+#      - IOR         Increment on read (rolls over)
+#      - IORS        Increment on read saturating
+#      - DOR         Decrement on read (rolls over)
+#      - DORS        Decrement on read saturating
 #      - SUB         Indicates register is wider than DWIDTH
 #      - INTERNAL    Indicates signal is internal to CSR block
 #
@@ -24,7 +30,7 @@ design:
     // --------------------------------------------------------------------------------------------------'
     // Copyright (c) <YEAR>  Ixia  All rights reserved.
     //
-    //   This file includes unpublished proprietary source code of Ixia.  The copyright
+    //   This file includes unpublished proprietary source code of <CompanyName>.  The copyright
     //   notice above does not evidence any actual or intended publication of such
     //   source code. You shall not disclose such source code (or any related information)
     //   and shall use it only in accordance with the terms of the license or confidentiality
@@ -53,8 +59,6 @@ design:
     // --------------------------------------------------------------------------------------------------
 
   footer: |
-    endmodule
-    
     // --------------------------------------------------------------------------------------------------
     // Release History
     //   VERSION DATE       AUTHOR        DESCRIPTION
@@ -63,8 +67,6 @@ design:
     //                                    Do not modify. Changes may be overwritten.
     // --------------------------------------------------------------------------------------------------
 
-
-  # CPU: ================================================================ 
   cpu:
     name:   Freescale
     bus:    PCIe
