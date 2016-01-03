@@ -212,11 +212,11 @@ class CsrMap(object):
             self.files.append(include['file'])
         
     def rtl_gen_csr_pkg(self, design, cpu, block):
-        self.rtl_gen_header(design=design, cpu=cpu, block=block, pkg=True)
+        self.rtl_header(design=design, cpu=cpu, block=block, pkg=True)
         print 'package %s_csr_pkg;' % block['name']
         print 'endpackage;\n'
 
-    def rtl_gen_avalon_bus_pkg(self):
+    def rtl_avalon_bus_pkg(self):
         design   = self.map['design']
         blocks   = design['blocks']
         cpu      = design['cpu']
@@ -277,25 +277,25 @@ class CsrMap(object):
         design = self.map['design']
         cpu    = design['cpu']
         blocks = design['blocks']
-        self.rtl_gen_avalon_bus_pkg()
-        self.rtl_gen_blocks(design=design, cpu=cpu, blocks=blocks)
+        self.rtl_avalon_bus_pkg()
+        self.rtl_blocks(design=design, cpu=cpu, blocks=blocks)
 
-    def rtl_gen_blocks(self, design, cpu, blocks):
+    def rtl_blocks(self, design, cpu, blocks):
         for block in blocks:
             self.rtl_gen_csr_pkg(design=design, cpu=cpu, block=block)
-
-            self.rtl_gen_header(design=design, cpu=cpu, block=block, pkg=False)
-            self.rtl_gen_portmap(cpu=cpu, block=block)
-            self.rtl_gen_signal_declarations(cpu=cpu, block=block)
-            self.rtl_gen_signal_assignments(cpu=cpu, block=block)
-            self.rtl_gen_endmodule()
-            self.rtl_gen_footer()
+            self.rtl_header(design=design, cpu=cpu, block=block, pkg=False)
+            self.rtl_portmap(cpu=cpu, block=block)
+            self.rtl_signal_declarations(cpu=cpu, block=block)
+            self.rtl_signal_assignments(cpu=cpu, block=block)
+            self.rtl_endmodule()
+            self.rtl_footer()
+            # Generate code for sub-blocks (if present)
             try:
-                self.rtl_gen_blocks(design=design, cpu=cpu, blocks=block['csr']['blocks'])
+                self.rtl_blocks(design=design, cpu=cpu, blocks=block['csr']['blocks'])
             except:
                 pass
 
-    def rtl_gen_header(self, design, cpu, block, pkg=False):
+    def rtl_header(self, design, cpu, block, pkg=False):
 
 	now = time.localtime()
 	date = "%s/%02d/%02d" %(str(now.tm_year), now.tm_mon, now.tm_mday)
@@ -314,7 +314,7 @@ class CsrMap(object):
             line = line.replace('<CPU_CLOCK>', cpu['interface']['clock'])
             print line
 
-    def field_width(self, bit_pos):
+    def field_vector(self, bit_pos):
         b = bit_pos.split(':')
         width = int(b[0]) - int(b[len(b)-1]) + 1
         width_str = ' ' * 7
@@ -323,7 +323,7 @@ class CsrMap(object):
             width_str = '%7s' % width_str
         return width_str
         
-    def rtl_gen_portmap(self, cpu, block):
+    def rtl_portmap(self, cpu, block):
 
 	print 'module %s_csr \n' % block['name']
         print '  import avalon_bus_pkg::*, %s_csr_pkg::*;\n' % block['name']
@@ -335,7 +335,7 @@ class CsrMap(object):
         for reg in block['csr']['registers']:
             for field in reg['fields']:
                 attributes = field['attributes']
-                width = self.field_width(field['bit_pos'])
+                width = self.field_vector(field['bit_pos'])
                 if 'RO' in attributes:
                     signals.append('    input  logic %s %s'           % (width, field['name']))
                 if 'RW' in attributes:
@@ -358,7 +358,7 @@ class CsrMap(object):
         print ',\n'.join(signals)
         print '  );'
 
-    def rtl_gen_signal_declarations(self, cpu, block):
+    def rtl_signal_declarations(self, cpu, block):
         print '\n'
         print '  // ---------------------------------------------------------------------------'
         print '  // Signal Declarations'
@@ -367,17 +367,17 @@ class CsrMap(object):
         signals.append('  logic  [%d:0] reserved;' % cpu['dwidth'])
         for reg in block['csr']['registers']:
             bit_pos = '%s:0' % cpu['dwidth']
-            width = self.field_width(bit_pos)
+            width = self.field_vector(bit_pos)
             signals.append('  logic %s %s;' % (width, reg['name']))
             for field in reg['fields']:
-                width = self.field_width(field['bit_pos'])
+                width = self.field_vector(field['bit_pos'])
                 attributes = field['attributes']
                 if 'W1C' in attributes:
                     signals.append('  logic %s %s_w1c;' % (width, field['name']))
         signals.sort()
         print '\n'.join(signals)
 
-    def rtl_gen_signal_assignments(self, cpu, block):
+    def rtl_signal_assignments(self, cpu, block):
         print '\n'
         print '  // ---------------------------------------------------------------------------'
         print '  // Signal Assignments'
@@ -385,48 +385,56 @@ class CsrMap(object):
         print "  assign reserved = '0; // use as a place-holder for undefined register bits.\n"
         assign = []
         
-
+        # Find the longest register name
+        reg_names = []
         for reg in block['csr']['registers']:
+            reg_names.append(reg['name'])
+        max_len = len(max(reg_names, key=len))
+
+        # Assign fields to their corresponding registers
+        for reg in block['csr']['registers']:
+            # set the default of each register bit to 'reserved'
             register = ['reserved' for i in range(cpu['dwidth'])]
+            fields = []
             for field in reg['fields']:
                 bits = map(int, field['bit_pos'].split(':'))
                 for i in range(bits[0], bits[len(bits)-1]-1, -1):
                     register[i] = field['name']
 
-            print "REGISTER: ", register
             field_save = ''
+            field_width = 0
+            field_info_str = ''
             for i, field in reversed(list(enumerate(register))):
-#               print 'BIT %d: %s' % (i, field)
                 if field != field_save:
-                    bit_ctr = 0
-                    print 'FIELD:', field
+                    if field_width > 0:
+                        field_info_str += '%s[%d:0]' % (field_save, field_width)
+                        fields.append(field_info_str)
+                        field_info_str = ''
+                    elif i < (cpu['dwidth'] - 1):
+                        field_info_str += '%s[0]' % field_save
+                        fields.append(field_info_str)
+                    field_info_str = ''
                     field_save = field
+                    field_width = 0
                 else:
-                    bit_ctr += 1
-           
-        reg_names = []
-        for reg in block['csr']['registers']:
-            reg_names.append(reg['name'])
-        max_len = len(max(reg_names, key=len))
-          
-        for reg in block['csr']['registers']:
-            fields = []
-            for field in reg['fields']:
-                fields.append(field['name'])
+                    field_width += 1
+            if field_width > 0:
+                field_info_str += '%s[%d:0]' % (field_save, field_width)
+            else:
+                field_info_str += '%s[0]' % field_save
+            fields.append(field_info_str)
             field_regs = ', '.join(fields)
-#           reg_name = reg['name']
             reg_name = reg['name'].ljust(max_len)
             assign.append("  assign %s = {%s};" % (reg_name, field_regs))
-            
-        #print 'ok\n".join(reg.ljust(col_width) for reg in a)
+
         assign.sort()
         print '\n'.join(assign)
        
 
-    def rtl_gen_endmodule(self):
+    def rtl_endmodule(self):
         print '\nendmodule;\n'
 
-    def rtl_gen_footer(self):
+    def rtl_footer(self):
 
         now = time.localtime()
         date = "%s/%02d/%02d" %(str(now.tm_year), now.tm_mon, now.tm_mday)
