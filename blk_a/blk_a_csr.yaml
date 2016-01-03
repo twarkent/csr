@@ -48,7 +48,7 @@
 
         - name: test
           bit_pos: '9:8'
-          attributes: [WPA]
+          attributes: [RW, WPA]
           por: 0
           desc:  |
             0 - System Timer is synchronized to the transmit modem frame_sync.
@@ -70,7 +70,7 @@
 
         - name: fifo_rd
           bit_pos: '14'
-          attributes: [RP]
+          attributes: [RO, RP]
           por: 0
           desc: Create pulse when reading this register 
 
@@ -148,19 +148,19 @@
           desc: sub-chip terminal count
 
         - name: chip_tc
-          bit_pos: '15:4'
+          bit_pos: '15:8'
           attributes: [RW]
           por: 0
           desc: chip terminal count
 
         - name: slot_tc
-          bit_pos: '19:16'
+          bit_pos: '20:16'
           attributes: [RW]
           por: 0
           desc: slot terminal count
 
         - name: frame_tc
-          bit_pos: '31:20'
+          bit_pos: '31:24'
           attributes: [RW]
           por: 0
           desc: frame terminal count

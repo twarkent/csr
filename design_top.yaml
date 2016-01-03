@@ -7,8 +7,6 @@
 #      * W1C         Write '1' to clear
 #      * WP[A]       Create a pulse when written. _A pulse stays asserted until acknowledged
 #      - RP[A]       Create a pulse when read. _A pulse stays asserted until acknowledged
-#      - IOR         Increment on read
-#      - DOR         Decrement on read
 #      - IOR         Increment on read (rolls over)
 #      - IORS        Increment on read saturating
 #      - DOR         Decrement on read (rolls over)
@@ -19,8 +17,6 @@
 #      Consider these:
 #      - COR         Clear on read
 #      - SOR         Set on read
-#      - STICKY-0    Sticky 0 - Registered input. Stays 0 until W1C
-#      - STICKY-1    Sticky 1 - Registered input. Stays 1 until W1C
 # --------------------------------------------------------------------------------------------------
 
 design:
@@ -28,13 +24,13 @@ design:
   desc: Control Status Register Definition
   header: |
     // --------------------------------------------------------------------------------------------------'
-    // Copyright (c) <YEAR>  Ixia  All rights reserved.
+    // Copyright (c) <YEAR>  CompanyName  All rights reserved.
     //
-    //   This file includes unpublished proprietary source code of <CompanyName>.  The copyright
+    //   This file includes unpublished proprietary source code of CompanyName.  The copyright
     //   notice above does not evidence any actual or intended publication of such
     //   source code. You shall not disclose such source code (or any related information)
     //   and shall use it only in accordance with the terms of the license or confidentiality
-    //   agreements you have entered into with Ixia. Distributed to licensed users or owners.
+    //   agreements you have entered into with CompanyName. Distributed to licensed users or owners.
     //
     // --------------------------------------------------------------------------------------------------
     // FILE NAME      : <FILENAME>
@@ -43,11 +39,6 @@ design:
     // KEYWORDS: <BLOCK> control status registers.
     // --------------------------------------------------------------------------------------------------
     // PURPOSE:  <CPU> <BLOCK> control status registers.
-    // --------------------------------------------------------------------------------------------------
-    // Parameters
-    //   NAME              DEFAULT      DESCRIPTION
-    //   ----------------- ------------ -----------------------------------------------------------------
-    //   <PARAMETERS>
     // --------------------------------------------------------------------------------------------------
     // Reuse Issues:
     //   Reset Strategy:      Asynchronous
@@ -76,25 +67,33 @@ design:
     decode: 4          # Use upper 4 bits for block decoding
 
     interface:
-      clock:       clk
-      reset:       rst
-      cs:          cs
-      write:       wr
-      read:        rd
-      address:     addr
-      write_data:  wdata
-      read_data:   rdata
-      byte_enable: be
+      clock:           clk
+      reset:           rst
+      write:           wr
+      read:            rd
+      address:         addr
+      write_data:      wdata
+      read_data:       rdata
+      read_data_valid: rdata_valid
+      byte_enable:     byte_enable
+      lock:            lock
+      wait_request:    wait_request
+      response:        response
 
   blocks:
-    - name: blk_a
-      file: blk_a/blk_a_csr.yaml
+    - name:      blk_a
+      file:      blk_a/blk_a_csr.yaml
+      output:    blk_a/blk_a_csr.sv
       base_addr: 0x10000
-    - name: blk_b
-      file: blk_b/blk_b_csr.yaml
+
+    - name:      blk_b
+      file:      blk_b/blk_b_csr.yaml
+      output:    blk_b/blk_b_csr.sv
       base_addr: 0x20000
-    - name: blk_c
-      file: blk_c/blk_c_csr.yaml
+
+    - name:      blk_c
+      file:      blk_c/blk_c_csr.yaml
+      output:    blk_c/blk_c_csr.sv
       base_addr: 0x30000
 
 
