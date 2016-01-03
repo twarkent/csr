@@ -374,6 +374,11 @@ class CsrMap(object):
                 attributes = field['attributes']
                 if 'W1C' in attributes:
                     signals.append('  logic %s %s_w1c;' % (width, field['name']))
+                if 'INCR'  in attributes or \
+                   'INCRS' in attributes or \
+                   'DECR'  in attributes or \
+                   'DECRS' in attributes:
+                    signals.append('  logic %s %s_ctr;' % (width, field['name']))
         signals.sort()
         print '\n'.join(signals)
 
@@ -397,9 +402,17 @@ class CsrMap(object):
             register = ['reserved' for i in range(cpu['dwidth'])]
             fields = []
             for field in reg['fields']:
+                attributes = field['attributes']
                 bits = map(int, field['bit_pos'].split(':'))
                 for i in range(bits[0], bits[len(bits)-1]-1, -1):
                     register[i] = field['name']
+                    if 'W1C' in attributes:    
+                        register[i] = field['name'] + '_w1c'
+                    if 'INCR'  in attributes or \
+                       'INCRS' in attributes or \
+                       'DECR'  in attributes or \
+                       'DECRS' in attributes:
+                        register[i] = field['name'] + '_ctr'
 
             field_save = ''
             field_width = 0

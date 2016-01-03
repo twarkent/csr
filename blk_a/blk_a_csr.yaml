@@ -100,9 +100,9 @@
           por: 0
           desc: slot counter
 
-        - name: frame_ctr
+        - name: frame_tick
           bit_pos: '31:20'
-          attributes: [RO]
+          attributes: [RO, INCRS]
           por: 0
           desc: frame counter
 
