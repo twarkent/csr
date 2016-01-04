@@ -36,9 +36,9 @@ design:
     // FILE NAME      : <FILENAME>
     // CURRENT AUTHOR : csr.py script
     // --------------------------------------------------------------------------------------------------
-    // KEYWORDS: <BLOCK> control status registers.
+    // KEYWORDS: <MODULE> control status registers.
     // --------------------------------------------------------------------------------------------------
-    // PURPOSE:  <CPU> <BLOCK> control status registers.
+    // PURPOSE:  <CPU> <MODULE> control status registers.
     // --------------------------------------------------------------------------------------------------
     // Reuse Issues:
     //   Reset Strategy:      Asynchronous

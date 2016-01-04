@@ -102,7 +102,7 @@
 
         - name: frame_tick
           bit_pos: '31:20'
-          attributes: [RO, INCRS]
+          attributes: [INTERNAL, INCRS]
           por: 0
           desc: frame counter
 

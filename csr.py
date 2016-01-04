@@ -29,6 +29,43 @@ import textwrap
 
 log = logging.getLogger('csr_logger')
 
+# Register
+# Type      Description
+# ------------------------------------------------------------------------------------
+# COR:      Clear on Read.
+# DECR:     A read-only decrementing counter that is commonly cleared using COR, 
+#           or W1C and naturally rolls-over. A single-bit input signal is used 
+#           as the trigger. The bit_pos field is used to determine the counters bit-width.
+# DECRS:    A read-only decrementing (saturate to all 0's) counter that is commonly cleared 
+#           using COR, or W1C.
+# DOR:      Decrement on read. The field is decremented when the address is read.
+# DORS:     Decrement on read saturating
+# INCR:     A read-only incrementing counter that is commonly cleared using COR, 
+#           or W1C and naturally rolls-over.
+# INCRS:    A read-only incrementing (saturate to all 1's) counter that is commonly cleared 
+#           using COR, or W1C.
+# IOR:      Increment on read
+# IORS:     Increment on read saturating.
+# INTERNAL: Field is not an input nor an output of this module. eg: a INCR register
+#           may only have an single-bit input event signal and the multi-bit register
+#           is internal to the module.
+# RO:       Read-Only
+# RP(A):    Read-Pulse with optional acknowledge
+# SOR:      Set on read. The field is set to all 1's when the address is read.
+# STO:      Sticky-low. This is like sticky (ST1), but the sticky values stays 0 if the 
+#           nominal value is ever 0.
+# ST1:      Register bits that are set and remain set in response to an event.
+#           This field type is commonly cleared using COR, or W1C.
+# SUB:      Subset. If several fields/addresses are combined to form a larger field.
+# W1C:      Write-1-to-clear. The field is reset to 0 when the address is written to
+#           and the corresponding bit(s) is/are 1.
+# W1S:      Write-1-to-set. The field is set to 1's when the address is written and the
+#           corrresponding bit(s) is/are 1, but is not altered if the bit(s) is/are 0.
+# WO:       write-only
+# WP(A):    Write-Pulse with optional acknowledge. The Pulse remains asserted if an 
+#           acknowledge is expected.
+# RAM<n>:   Implement using a RAM <n> words deep.
+
 class color:
     PURPLE    = '\033[95m'
     CYAN      = '\033[96m'
@@ -207,19 +244,26 @@ class CsrMap(object):
             return 0 
         for index, include in enumerate(include_files):
             include_map = self.yaml_load(include['file'], parent_file=parent_file)
-#           include_map['base_addr'] = include['base_addr']
             block['csr']['registers'].append(include_map)
             self.files.append(include['file'])
         
-    def rtl_gen_csr_pkg(self, design, cpu, block):
-        self.rtl_header(design=design, cpu=cpu, block=block, pkg=True)
-        print 'package %s_csr_pkg;' % block['name']
+    def rtl_csr_pkg(self, design, cpu, block):
+        
+        module = block['name']
+        filename = '%s_csr_pkg' % module
+        self.rtl_header(design=design, cpu=cpu, filename=filename, module=module)
+        print 'package %s;' % filename
         print 'endpackage;\n'
 
     def rtl_avalon_bus_pkg(self):
         design   = self.map['design']
         blocks   = design['blocks']
         cpu      = design['cpu']
+
+        module   = 'avalon_bus'
+        filename = 'avalon_bus_pkg'
+
+        self.rtl_header(design=design, cpu=cpu, filename=filename, module=module)
 
 	print 'package avalon_bus_pkg;\n'
 	print '  typedef enum {OKAY, RESERVED, SLAVE_ERROR, DECODE_ERROR} response_te;\n'
@@ -282,26 +326,27 @@ class CsrMap(object):
 
     def rtl_blocks(self, design, cpu, blocks):
         for block in blocks:
-            self.rtl_gen_csr_pkg(design=design, cpu=cpu, block=block)
-            self.rtl_header(design=design, cpu=cpu, block=block, pkg=False)
+            module = block['name']
+            filename = '%s_csr.sv' % module
+            self.rtl_csr_pkg(design=design, cpu=cpu, block=block)
+            self.rtl_header(design=design, cpu=cpu, filename=filename, module=module)
             self.rtl_portmap(cpu=cpu, block=block)
             self.rtl_signal_declarations(cpu=cpu, block=block)
             self.rtl_signal_assignments(cpu=cpu, block=block)
             self.rtl_endmodule()
             self.rtl_footer()
+
             # Generate code for sub-blocks (if present)
             try:
                 self.rtl_blocks(design=design, cpu=cpu, blocks=block['csr']['blocks'])
             except:
                 pass
 
-    def rtl_header(self, design, cpu, block, pkg=False):
+    def rtl_header(self, design, cpu, filename, module):
 
 	now = time.localtime()
 	date = "%s/%02d/%02d" %(str(now.tm_year), now.tm_mon, now.tm_mday)
 	year = str(now.tm_year)
-        pkg_ext = '_pkg' if pkg else ''
-        filename = block['name'] + '_csr' + pkg_ext + '.sv'
 
         header = design['header']
         header = header.split('\n')
@@ -309,7 +354,7 @@ class CsrMap(object):
         for line in header:
             line = line.replace('<YEAR>', year)
             line = line.replace('<FILENAME>', filename)
-            line = line.replace('<BLOCK>', block['name'])
+            line = line.replace('<MODULE>', module)
             line = line.replace('<CPU>', cpu['name'])
             line = line.replace('<CPU_CLOCK>', cpu['interface']['clock'])
             print line
@@ -350,11 +395,15 @@ class CsrMap(object):
                 if 'RPA' in attributes:
                     signals.append('    output logic         %s_rp'   % field['name'])
                     signals.append('    input  logic         %s_rpa'  % field['name'])
+                if 'W1C' in attributes:
+                    signals.append('    input  logic %s %s'           % (width, field['name']))
                 if 'INCR'  in attributes or \
                    'INCRS' in attributes or \
                    'DECR'  in attributes or \
                    'DECRS' in attributes:
                     signals.append('    input  logic         %s'      % field['name'])
+                    if 'INTERNAL' not in attributes:
+                        signals.append('    ouput  logic %s %s_ctr'       % (width, field['name']))
         print ',\n'.join(signals)
         print '  );'
 
@@ -368,16 +417,17 @@ class CsrMap(object):
         for reg in block['csr']['registers']:
             bit_pos = '%s:0' % cpu['dwidth']
             width = self.field_vector(bit_pos)
-            signals.append('  logic %s %s;' % (width, reg['name']))
+            signals.append('  logic %s %s_reg;' % (width, reg['name']))
             for field in reg['fields']:
                 width = self.field_vector(field['bit_pos'])
                 attributes = field['attributes']
                 if 'W1C' in attributes:
                     signals.append('  logic %s %s_w1c;' % (width, field['name']))
-                if 'INCR'  in attributes or \
+                if ('INCR'  in attributes or \
                    'INCRS' in attributes or \
                    'DECR'  in attributes or \
-                   'DECRS' in attributes:
+                   'DECRS' in attributes) and 'INTERNAL' in attributes:
+                   
                     signals.append('  logic %s %s_ctr;' % (width, field['name']))
         signals.sort()
         print '\n'.join(signals)
@@ -394,7 +444,7 @@ class CsrMap(object):
         reg_names = []
         for reg in block['csr']['registers']:
             reg_names.append(reg['name'])
-        max_len = len(max(reg_names, key=len))
+        max_len = len(max(reg_names, key=len)) + 4
 
         # Assign fields to their corresponding registers
         for reg in block['csr']['registers']:
@@ -437,7 +487,8 @@ class CsrMap(object):
                 field_info_str += '%s[0]' % field_save
             fields.append(field_info_str)
             field_regs = ', '.join(fields)
-            reg_name = reg['name'].ljust(max_len)
+            reg_name = '%s_reg' % reg['name']
+            reg_name = reg_name.ljust(max_len)
             assign.append("  assign %s = {%s};" % (reg_name, field_regs))
 
         assign.sort()
