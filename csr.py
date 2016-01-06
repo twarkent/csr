@@ -333,6 +333,8 @@ class CsrMap(object):
             self.rtl_portmap(cpu=cpu, block=block)
             self.rtl_signal_declarations(cpu=cpu, block=block)
             self.rtl_signal_assignments(cpu=cpu, block=block)
+            self.rtl_readback(cpu=cpu, block=block)
+
             self.rtl_endmodule()
             self.rtl_footer()
 
@@ -494,6 +496,33 @@ class CsrMap(object):
         assign.sort()
         print '\n'.join(assign)
        
+    def rtl_readback(self, cpu, block):
+        print ''
+        print '  // ------------------------'
+        print '  // Read-back Path'
+        print '  // ------------------------\n'
+
+        print '  always_comb begin'
+        print '    response = OKAY;'
+        print '    case ( bus.addr )\n'
+
+        # Assign fields to their corresponding registers
+        base = 0 # for now
+        base_addr  = base + block['base_addr']
+        for reg in block['csr']['registers']:
+            reg_addr  = base_addr + reg['address']
+            reg_name  = reg['name']
+            print "      %s'h%X: bus.rdata = %s_reg" % (cpu['awidth'], reg_addr, reg_name)
+
+        print ''
+        print '      default: begin'
+        print "        bus.rdata = 32'hDEADBEEF;"
+        print '        response  = avalon_bus_pkg::DECODE_ERROR;'
+        print '      end\n'
+
+        print '    endcase'
+        print '  end'
+
 
     def rtl_endmodule(self):
         print '\nendmodule;\n'
