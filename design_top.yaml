@@ -86,6 +86,12 @@ design:
       output:    blk_a/blk_a_csr.sv
       base_addr: 0x10000
 
+    - name:      blk_a
+      file:      blk_a/blk_a_csr.yaml
+      output:    blk_a/blk_a_csr.sv
+      base_addr: 0x40000
+
+
     - name:      blk_b
       file:      blk_b/blk_b_csr.yaml
       output:    blk_b/blk_b_csr.sv
