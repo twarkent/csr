@@ -252,8 +252,23 @@ class CsrMap(object):
         module = block['name']
         filename = '%s_csr_pkg' % module
         self.rtl_header(design=design, cpu=cpu, filename=filename, module=module)
-        print 'package %s;' % filename
-        print 'endpackage;\n'
+        print 'package %s;\n' % filename
+        max_reg_len = self.max_name(block['csr']['registers']) + 5
+        field_list = []
+        for reg in block['csr']['registers']:
+            reg_name = '%s_ADDR' % reg['name'].upper()
+            reg_name = reg_name.ljust(max_reg_len)
+            print "  localparam {3} = {0}'h{1:0{2}x};".format(cpu['awidth'], reg['address'], cpu['awidth']/4, reg_name)
+            for field in reg['fields']:
+                field_list.append(field)
+
+#       max_field_len = len(max(field_list, key=len)) 
+#       for field in field_list:
+#           field_name = field.ljust(max_field_len).upper()
+#           field_list.append('  localparam {0} = [{1}];'.format(field_name, field['bit_pos']))
+#           print field
+
+        print '\nendpackage;\n'
 
     def rtl_avalon_bus_pkg(self):
         design   = self.map['design']
@@ -433,6 +448,13 @@ class CsrMap(object):
         signals.sort()
         print '\n'.join(signals)
 
+    def max_name(self, names):
+        names_list = []
+        for reg in names:
+            names_list.append(reg['name'])
+        return len(max(names_list, key=len)) 
+      
+
     def rtl_signal_assignments(self, cpu, block):
         print '\n'
         print '  // ---------------------------------------------------------------------------'
@@ -442,10 +464,7 @@ class CsrMap(object):
         assign = []
         
         # Find the longest register name
-        reg_names = []
-        for reg in block['csr']['registers']:
-            reg_names.append(reg['name'])
-        max_len = len(max(reg_names, key=len)) + 4
+        max_len = self.max_name(block['csr']['registers']) + 4
 
         # Assign fields to their corresponding registers
         for reg in block['csr']['registers']:
@@ -503,17 +522,21 @@ class CsrMap(object):
 
         print '  always_comb begin'
         print '    response = avalon_bus_pkg::OKAY;'
-        print '    case ( bus.addr )\n'
+        print '    case (bus.addr)\n'
 
         # Assign fields to their corresponding registers
         base = 0 # for now
         base_addr  = base + block['base_addr']
+        max_len = self.max_name(block['csr']['registers']) + 7
         for reg in block['csr']['registers']:
-            print "{0:8}'h{1:0{2}x}: bus.rdata = {3}_reg".format(cpu['awidth'], reg['address'], cpu['awidth']/4, reg['name'])
+            reg_addr = '%s_ADDR:' % reg['name'].upper()
+            reg_addr = reg_addr.ljust(max_len)
+#           print "{0:8}'h{1:0{2}x}: bus.rdata = {3}_reg".format(cpu['awidth'], reg['address'], cpu['awidth']/4, reg['name'])
+            print "      {0} bus.rdata = {1}_reg;".format(reg_addr, reg['name'])
 
         print ''
         print '      default: begin'
-        print "        bus.rdata = 32'hDEADBEEF;"
+        print "        bus.rdata = 32'hDEADBEEF; // Because it's tasty :)"
         print '        response  = avalon_bus_pkg::DECODE_ERROR;'
         print '      end\n'
 
