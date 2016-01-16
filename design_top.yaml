@@ -60,7 +60,7 @@ design:
 
   cpu:
     name:   Freescale
-    bus:    PCIe
+    bus:    avalon
     awidth: 20
     dwidth: 64
     access: sync       # Interface synchronized to destination clock

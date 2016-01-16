@@ -254,19 +254,34 @@ class CsrMap(object):
         self.rtl_header(design=design, cpu=cpu, filename=filename, module=module)
         print 'package %s;\n' % filename
         max_reg_len = self.max_name(block['csr']['registers']) + 5
-        field_list = []
+        field_names = []
+        registers = {}
+        print '  // Register Locations'
         for reg in block['csr']['registers']:
             reg_name = '%s_ADDR' % reg['name'].upper()
             reg_name = reg_name.ljust(max_reg_len)
             print "  localparam {3} = {0}'h{1:0{2}x};".format(cpu['awidth'], reg['address'], cpu['awidth']/4, reg_name)
+            field_list  = []
             for field in reg['fields']:
                 field_list.append(field)
+                field_names.append(field['name'])
+            registers[reg['name'].upper()] = field_list
 
-#       max_field_len = len(max(field_list, key=len)) 
-#       for field in field_list:
-#           field_name = field.ljust(max_field_len).upper()
-#           field_list.append('  localparam {0} = [{1}];'.format(field_name, field['bit_pos']))
-#           print field
+        max_field_len = max_reg_len + len(max(field_names, key=len)) + 2
+        for register, fields in registers.iteritems():
+            print '\n  // Register: %s -------------------------------------' % register
+            print '\n  // Field Widths'
+            for field in fields:
+                field_name = '%s_%s_WIDTH' % (register, field['name'])
+                field_name = field_name.ljust(max_field_len).upper()
+                width = self.field_width(field['bit_pos'])
+                print "  localparam {0} = {1};".format(field_name, width)
+
+            print '\n  // Field Bit-Positions'
+            for field in fields:
+                field_name = '%s_%s_BIT_POS' % (register, field['name'])
+                field_name = field_name.ljust(max_field_len).upper()
+                print '  localparam {0} = "[{1}]";'.format(field_name, field['bit_pos'])
 
         print '\nendpackage;\n'
 
@@ -375,6 +390,10 @@ class CsrMap(object):
             line = line.replace('<CPU_CLOCK>', cpu['interface']['clock'])
             print line
 
+    def field_width(self, bit_pos):
+        b = bit_pos.split(':')
+        return int(b[0]) - int(b[len(b)-1]) + 1
+       
     def field_vector(self, bit_pos):
         b = bit_pos.split(':')
         width = int(b[0]) - int(b[len(b)-1]) + 1
@@ -450,8 +469,8 @@ class CsrMap(object):
 
     def max_name(self, names):
         names_list = []
-        for reg in names:
-            names_list.append(reg['name'])
+        for name in names:
+            names_list.append(name['name'])
         return len(max(names_list, key=len)) 
       
 
