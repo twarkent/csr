@@ -272,7 +272,8 @@ class CsrMap(object):
             print '\n  // Register: %s -------------------------------------' % register
             print '\n  // Field Widths'
             for field in fields:
-                field_name = '%s_%s_WIDTH' % (register, field['name'])
+                field_name = self.localparam_field_width(register, field)
+#               field_name = '%s_%s_WIDTH' % (register, field['name'])
                 field_name = field_name.ljust(max_field_len).upper()
                 width = self.field_width(field['bit_pos'])
                 print "  localparam {0} = {1};".format(field_name, width)
@@ -284,6 +285,10 @@ class CsrMap(object):
                 print '  localparam {0} = "[{1}]";'.format(field_name, field['bit_pos'])
 
         print '\nendpackage;\n'
+
+    def localparam_field_width(self, register, field):
+        field_name = '%s_%s_WIDTH' % (register.upper(), field['name'].upper())
+        return field_name
 
     def rtl_avalon_bus_pkg(self):
         design   = self.map['design']
@@ -416,6 +421,9 @@ class CsrMap(object):
             for field in reg['fields']:
                 attributes = field['attributes']
                 width = self.field_vector(field['bit_pos'])
+#               param = self.localparam_field_width(reg['name'], field)
+#               width = '[{0}-1:0]'.format(param)
+       
                 if 'RO' in attributes:
                     signals.append('    input  logic %s %s'           % (width, field['name']))
                 if 'RW' in attributes:
